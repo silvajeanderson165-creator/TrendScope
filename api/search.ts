@@ -155,7 +155,7 @@ async function trySearxngSearch(query: string): Promise<any[] | null> {
   
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
     const response = await fetch(
       `https://html.duckduckgo.com/html/?q=${encQuery}`,
