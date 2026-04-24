@@ -1,41 +1,73 @@
-# 🌐 TrendScope
+# React + TypeScript + Vite
 
-| Um **Pipeline Autônomo de Curadoria** e **Motor de Busca de Tendências**, construído com React, TypeScript, Hono e Python.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-![Deploy Status](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## 🚀 Sobre o Projeto
+## React Compiler
 
-O **TrendScope** é um portal completo para descoberta de conteúdos virais e em alta. Ele atua pesquisando as últimas tendências na internet e curando os links, títulos e descrições dos artigos mais relevantes. Tudo isso processado de forma assíncrona por um motor em Python, salvo num banco MySQL e servido em tempo real para o usuário final através de uma interface React lindamente fluida.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### ✨ Features
+## Expanding the ESLint configuration
 
-- 🕵️‍♂️ **Curadoria Autônoma** — Scripts em Python (`tools/`) buscam tendências da web automaticamente sem afetar o frontend.
-- ⚡ **Performance e Cache** — O backend em **Hono + tRPC** garante respostas rápidas com suporte a cache inteligente.
-- 🎨 **Interface Premium** — Animações fluidas (`framer-motion`), Glassmorphism, feedback tátil e Design System moderno.
-- 🛡️ **Rate Limiting** — Proteção nativa contra abusos para manter a estabilidade do sistema.
-- 🧩 **Arquitetura Desacoplada** — Back-office em Python (coleta) e API Edge-ready em TypeScript (entrega).
-- 📱 **Responsividade Total** — Adapta-se perfeitamente para visualização no celular ou desktop.
-- 🌐 **Deploy na Vercel** — Integração CI/CD contínua para o frontend e serverless API.
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
----
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-## 🛠 Tecnologias Utilizadas
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-| Componente | Tecnologia | Uso no Projeto |
-| :--- | :--- | :--- |
-| **Frontend** | React + Vite | Renderização da interface, gestão de estado e animações (Framer Motion). |
-| **Estilização**| TailwindCSS | Design System, classes utilitárias e criação da estética Glassmorphism. |
-| **API** | Hono + tRPC | Roteamento Serverless rápido, Typesafe API e comunicação com o banco. |
-| **Banco** | MySQL (TiDB) | Armazenamento primário dos resultados de busca (Schema desenhado via Drizzle). |
-| **Back-Office**| Python | Pipeline de Ingestão (`daemon_worker.py`), requisições autônomas ao SearXNG. |
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
----
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-> Desenvolvido com muita paixão e código limpo por **Jeanderson Silva 😎🤌**
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
