@@ -1,0 +1,17 @@
+{
+  "name": "TrendScope - Descubra Conteúdo Trending",
+  "short_name": "TrendScope",
+  "description": "Pesquise qualquer tema e descubra os 5 conteúdos mais relevantes da internet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
