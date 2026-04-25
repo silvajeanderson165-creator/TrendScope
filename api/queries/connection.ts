@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+
 import { env } from "../lib/env";
 import * as schema from "@db/schema";
 import * as relations from "@db/relations";
@@ -16,11 +16,13 @@ export function getDb() {
     } else if (!url.includes("ssl=")) {
       url += url.includes("?") ? "&ssl={\"rejectUnauthorized\":true}" : "?ssl={\"rejectUnauthorized\":true}";
     }
-
-    const poolConnection = mysql.createPool(url);
     
-    instance = drizzle(poolConnection, {
-      mode: "default", // planetscale mode is for PlanetScale HTTP driver, not mysql2 TCP driver!
+    if (!url.includes("connectTimeout=")) {
+      url += url.includes("?") ? "&connectTimeout=5000" : "?connectTimeout=5000";
+    }
+
+    instance = drizzle(url, {
+      mode: "default",
       schema: fullSchema,
     });
   }
