@@ -204,7 +204,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
       return results;
     }
   } catch {
-    console.log(`[SERPER] Erro na rede ou parse:`, e);
+    console.log(`[SERPER] Erro na rede ou parse`);
   }
   
   return null;
