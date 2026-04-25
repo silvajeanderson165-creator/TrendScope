@@ -19,7 +19,9 @@ app.use("/api/trpc/*", async (c) => {
 });
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
-export default app;
+import { handle } from "hono/vercel";
+
+export default process.env.VERCEL ? handle(app) : app;
 
 if (env.isProduction && !process.env.VERCEL) {
   const { serve } = await import("@hono/node-server");
