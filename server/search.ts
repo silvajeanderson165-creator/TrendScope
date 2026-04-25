@@ -105,7 +105,7 @@ function generateMockResults(query: string) {
 async function fetchOgImage(targetUrl: string): Promise<string> {
   try {
     const controller = new AbortController();
-    // 2.5 segundos limite para não travar a pesquisa principal
+    // 2.5 segundos limite para não travar a pesquisa principal, cobrindo o body tambem
     const timeout = setTimeout(() => controller.abort(), 2500); 
     
     // Fingir ser o scraper do Facebook/Twitter ajuda a bypassar captchas para tags OG
@@ -116,11 +116,11 @@ async function fetchOgImage(targetUrl: string): Promise<string> {
       },
       signal: controller.signal,
     }).catch(() => null);
-    
-    clearTimeout(timeout);
 
     if (res && res.ok) {
-      const html = await res.text();
+      const html = await res.text().catch(() => "");
+      clearTimeout(timeout);
+      
       // Expressões Regulares seguras para extrair a meta tag de imagem
       const ogMatch = 
         html.match(/<meta\s+(?:property|name)=["'](?:og:image|twitter:image)["']\s+content=["']([^"']+)["']/i) || 
@@ -134,6 +134,8 @@ async function fetchOgImage(targetUrl: string): Promise<string> {
         }
         return imageUrl;
       }
+    } else {
+      clearTimeout(timeout);
     }
   } catch {
     // Ignora se der erro de timeout ou rede
@@ -154,6 +156,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
+    console.log("Calling Google Serper fetch...");
     const response = await fetch("https://google.serper.dev/search", {
       method: "POST",
       headers: {
@@ -168,6 +171,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
       }),
       signal: controller.signal,
     });
+    console.log("Fetch finished! Status:", response.status);
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -196,11 +200,15 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
 
     // Puxar imagens via OG apenas para os resultados que a API não retornou imagem direta
     if (results.length > 0) {
+      console.log("Fetching OG images...");
       await Promise.all(results.map(async (r) => {
         if (!r.image) {
+          console.log("Fetching OG image for:", r.url);
           r.image = await fetchOgImage(r.url);
+          console.log("Finished OG image for:", r.url);
         }
       }));
+      console.log("All OG images fetched");
       return results;
     }
   } catch {
@@ -211,13 +219,16 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
 }
 
 async function persistSearch(query: string, results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] | null = null) {
+  console.log("Starting persistSearch for query:", query);
   try {
     const db = getDb();
+    console.log("DB connected, executing select...");
     const existing = await db
       .select()
       .from(searches)
       .where(eq(searches.query, query))
       .limit(1);
+    console.log("DB select finished. Existing:", existing.length);
 
     if (existing.length > 0) {
       await db
@@ -254,24 +265,37 @@ export const searchRouter = createRouter({
 
       const cleanQuery = sanitizeQuery(input.query);
 
+      // Helper para não travar a API se o banco (TiDB) estiver acordando (cold start)
+      const safePersist = async (q: string, res: any[]) => {
+        await Promise.race([
+          persistSearch(q, res),
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]).catch(() => console.log("DB persist timeout/error ignored"));
+      };
+
       // Try cache first
+      console.log("Checking cache...");
       const cached = getCached(cleanQuery);
       if (cached) {
-        await persistSearch(cleanQuery, cached);
+        console.log("Found in cache, persisting...");
+        await safePersist(cleanQuery, cached);
+        console.log("Done persisting cache");
         return { results: cached, query: cleanQuery, source: "cache" };
       }
 
+      console.log("Calling trySerperSearch...");
       const realResults = await trySerperSearch(cleanQuery);
+      console.log("trySerperSearch finished with", realResults?.length, "results");
 
       if (realResults && realResults.length > 0) {
         setCached(cleanQuery, realResults);
-        await persistSearch(cleanQuery, realResults);
+        await safePersist(cleanQuery, realResults);
         return { results: realResults, query: cleanQuery, source: "serper" };
       }
 
       const mockResults = generateMockResults(cleanQuery);
       setCached(cleanQuery, mockResults);
-      await persistSearch(cleanQuery, mockResults);
+      await safePersist(cleanQuery, mockResults);
 
       return {
         results: mockResults,
