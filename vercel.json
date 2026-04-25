@@ -1,14 +1,3 @@
 {
-  "framework": "vite",
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/trpc/(.*)",
-      "destination": "/api/index.ts"
-    }
-  ]
+  "framework": "vite"
 }
