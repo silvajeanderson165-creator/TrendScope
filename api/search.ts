@@ -3,14 +3,7 @@ import { eq, sql, desc } from "drizzle-orm";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { searches } from "@db/schema";
-import * as cheerio from "cheerio";
-const SEARXNG_INSTANCES = [
-  "https://searx.tiekoetter.com",
-  "https://priv.au",
-  "https://search.rhscz.eu",
-  "https://paulgo.io",
-  "https://search.inetol.net",
-];
+import { env } from "./lib/env";
 
 const MOCK_IMAGES = [
   "https://images.unsplash.com/photo-1504711434969-e33886168fb5?w=600&h=400&fit=crop",
@@ -150,76 +143,68 @@ async function fetchOgImage(targetUrl: string): Promise<string> {
   return `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(targetUrl)}?w=600&h=400`;
 }
 
-async function trySearxngSearch(query: string): Promise<any[] | null> {
-  const encQuery = encodeURIComponent(query);
-  
+async function trySerperSearch(query: string): Promise<any[] | null> {
+  const apiKey = env.serperApiKey;
+  if (!apiKey) {
+    console.log("[SERPER] Chave de API não configurada. Caindo para os mocks.");
+    return null;
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    const response = await fetch(
-      `https://html.duckduckgo.com/html/?q=${encQuery}`,
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        },
-        signal: controller.signal,
-      }
-    );
+    const response = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        q: query,
+        gl: "br",
+        hl: "pt-br",
+        num: 5,
+      }),
+      signal: controller.signal,
+    });
     clearTimeout(timeout);
 
     if (!response.ok) {
-      console.log(`[DUCKDUCKGO] Falha: status ${response.status}`);
+      console.log(`[SERPER] Falha: status ${response.status}`);
       return null;
     }
 
-    const htmlText = await response.text();
-    const $ = cheerio.load(htmlText);
+    const data = await response.json();
+    const organic = data.organic || [];
+    
     const results: any[] = [];
     
-    // Parse the classic DDG HTML
-    $(".result").each((index, element) => {
-      if (results.length >= 5) return;
-      
-      const titleEl = $(element).find(".result__title .result__a");
-      const titleStr = titleEl.text().trim();
-      
-      const snippetEl = $(element).find(".result__snippet");
-      const snippetStr = snippetEl.text().trim();
-      
-      const linkHref = titleEl.attr("href");
-      
-      // Clean DDG redirect URL if needed (sometimes it starts with //duckduckgo.com/l/?uddg=...)
-      let url = linkHref || "#";
-      if (url.includes("uddg=")) {
-        const urlParams = new URL("https:" + url).searchParams;
-        url = urlParams.get("uddg") || url;
-      }
-      
-      if (titleStr && snippetStr && url !== "#") {
-        results.push({
-          id: `ddg-${index}`,
-          title: titleStr,
-          description: snippetStr,
-          url: url,
-          image: "", // Preenchido no próximo passo
-          source: new URL(url).hostname.replace("www.", ""),
-          date: new Date(Date.now() - index * 86400000).toLocaleDateString("pt-BR"),
-          isMock: false,
-        });
-      }
-    });
+    for (let i = 0; i < Math.min(organic.length, 5); i++) {
+      const item = organic[i];
+      results.push({
+        id: `serper-${i}`,
+        title: item.title,
+        description: item.snippet,
+        url: item.link,
+        image: item.imageUrl || "", 
+        source: new URL(item.link).hostname.replace("www.", ""),
+        date: item.date || new Date(Date.now() - i * 86400000).toLocaleDateString("pt-BR"),
+        isMock: false,
+      });
+    }
 
-    // Puxar todas as imagens exatas simultaneamente (concorrência)
+    // Puxar imagens via OG apenas para os resultados que a API não retornou imagem direta
     if (results.length > 0) {
       await Promise.all(results.map(async (r) => {
-        r.image = await fetchOgImage(r.url);
+        if (!r.image) {
+          r.image = await fetchOgImage(r.url);
+        }
       }));
       return results;
     }
   } catch (e) {
-    console.log(`[DUCKDUCKGO] Erro critico na rede ou parse:`, e);
+    console.log(`[SERPER] Erro na rede ou parse:`, e);
   }
   
   return null;
@@ -276,12 +261,12 @@ export const searchRouter = createRouter({
         return { results: cached, query: cleanQuery, source: "cache" };
       }
 
-      const realResults = await trySearxngSearch(cleanQuery);
+      const realResults = await trySerperSearch(cleanQuery);
 
       if (realResults && realResults.length > 0) {
         setCached(cleanQuery, realResults);
         await persistSearch(cleanQuery, realResults);
-        return { results: realResults, query: cleanQuery, source: "searxng" };
+        return { results: realResults, query: cleanQuery, source: "serper" };
       }
 
       const mockResults = generateMockResults(cleanQuery);
@@ -293,7 +278,7 @@ export const searchRouter = createRouter({
         query: cleanQuery,
         source: "demo",
         notice:
-          "Resultados de demonstração. Em produção, buscas reais são realizadas via SearXNG.",
+          "Resultados de demonstração. Em produção, você precisa definir a variável SERPER_API_KEY com a chave gratuita do Serper.dev para buscas reais.",
       };
     }),
 
