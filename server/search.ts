@@ -175,7 +175,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
       return null;
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     const organic = data.organic || [];
     
     const results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] = [];
