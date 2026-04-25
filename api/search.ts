@@ -14,10 +14,10 @@ const MOCK_IMAGES = [
 ];
 
 // ─── In-Memory Cache ─────────────────────────────────────────────
-const cache = new Map<string, { results: any[]; ts: number }>();
+const cache = new Map<string, { results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[]; ts: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-function getCached(query: string): any[] | null {
+function getCached(query: string): any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] | null {
   const entry = cache.get(query);
   if (!entry) return null;
   if (Date.now() - entry.ts > CACHE_TTL_MS) {
@@ -27,7 +27,7 @@ function getCached(query: string): any[] | null {
   return entry.results;
 }
 
-function setCached(query: string, results: any[]) {
+function setCached(query: string, results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[]) {
   cache.set(query, { results, ts: Date.now() });
   if (cache.size > 500) {
     const first = cache.keys().next().value;
@@ -135,7 +135,7 @@ async function fetchOgImage(targetUrl: string): Promise<string> {
         return imageUrl;
       }
     }
-  } catch (e) {
+  } catch {
     // Ignora se der erro de timeout ou rede
   }
   
@@ -143,7 +143,7 @@ async function fetchOgImage(targetUrl: string): Promise<string> {
   return `https://s0.wordpress.com/mshots/v1/${encodeURIComponent(targetUrl)}?w=600&h=400`;
 }
 
-async function trySerperSearch(query: string): Promise<any[] | null> {
+async function trySerperSearch(query: string): Promise<any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] | null> {
   const apiKey = env.serperApiKey;
   if (!apiKey) {
     console.log("[SERPER] Chave de API não configurada. Caindo para os mocks.");
@@ -178,7 +178,7 @@ async function trySerperSearch(query: string): Promise<any[] | null> {
     const data = await response.json();
     const organic = data.organic || [];
     
-    const results: any[] = [];
+    const results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] = [];
     
     for (let i = 0; i < Math.min(organic.length, 5); i++) {
       const item = organic[i];
@@ -203,14 +203,14 @@ async function trySerperSearch(query: string): Promise<any[] | null> {
       }));
       return results;
     }
-  } catch (e) {
+  } catch {
     console.log(`[SERPER] Erro na rede ou parse:`, e);
   }
   
   return null;
 }
 
-async function persistSearch(query: string, results: any[] | null = null) {
+async function persistSearch(query: string, results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] | null = null) {
   try {
     const db = getDb();
     const existing = await db
@@ -234,7 +234,7 @@ async function persistSearch(query: string, results: any[] | null = null) {
         ...(results ? { resultados_curados: results } : {})
       });
     }
-  } catch (e) {
+  } catch {
     // Silently fail — search should not break if DB is unavailable
   }
 }
@@ -291,7 +291,7 @@ export const searchRouter = createRouter({
         .orderBy(desc(searches.count))
         .limit(8);
       return { searches: popular };
-    } catch (e) {
+    } catch {
       return {
         searches: [
           { query: "Inteligência Artificial", count: 42 },
@@ -320,7 +320,7 @@ export const searchRouter = createRouter({
         uniqueQueries: uniqueQueries[0]?.count || 0,
         uptimeDays: 99.9,
       };
-    } catch (e) {
+    } catch {
       return {
         totalSearches: 1247,
         uniqueQueries: 312,
