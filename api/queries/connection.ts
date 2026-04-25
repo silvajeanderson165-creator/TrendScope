@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
-
+import { drizzle } from "drizzle-orm/tidb-serverless";
+import { connect } from "@tidbcloud/serverless";
 import { env } from "../lib/env";
 import * as schema from "@db/schema";
 import * as relations from "@db/relations";
@@ -10,21 +10,8 @@ let instance: ReturnType<typeof drizzle<typeof fullSchema>>;
 
 export function getDb() {
   if (!instance) {
-    let url = env.databaseUrl;
-    if (url.includes("sslaccept=strict")) {
-      url = url.replace("sslaccept=strict", "ssl={\"rejectUnauthorized\":true}");
-    } else if (!url.includes("ssl=")) {
-      url += url.includes("?") ? "&ssl={\"rejectUnauthorized\":true}" : "?ssl={\"rejectUnauthorized\":true}";
-    }
-    
-    if (!url.includes("connectTimeout=")) {
-      url += url.includes("?") ? "&connectTimeout=5000" : "?connectTimeout=5000";
-    }
-
-    instance = drizzle(url, {
-      mode: "default",
-      schema: fullSchema,
-    });
+    const client = connect({ url: env.databaseUrl });
+    instance = drizzle({ client, schema: fullSchema });
   }
   return instance;
 }
