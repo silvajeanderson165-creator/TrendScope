@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# 🔍 TrendScope — Motor de Curadoria de Tendências
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Plataforma **Full Stack** de curadoria inteligente que pesquisa e entrega as **Top 5 tendências** sobre qualquer tema em tempo real — com backend tRPC, banco TiDB e API Serper.dev.
 
-Currently, two official plugins are available:
+[![Acessar App](https://img.shields.io/badge/🌐_ACESSAR_APP-trend--scope.vercel.app-06B6D4?style=for-the-badge)](https://trend-scope.vercel.app)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![tRPC](https://img.shields.io/badge/tRPC-11-2596BE?style=for-the-badge&logo=trpc&logoColor=white)
+![TiDB](https://img.shields.io/badge/TiDB-Serverless-FF4500?style=for-the-badge)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🧠 Sobre
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Motor de busca especializado em curadoria. O usuário pesquisa qualquer tema e recebe os **5 resultados mais relevantes** com título, descrição, imagem OG e link direto.
 
-## Expanding the ESLint configuration
+### ✨ Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 🔎 **Busca em Tempo Real** — API Google via Serper.dev
+- 🖼️ **OG Image Extraction** — Thumbnails automáticas dos sites
+- 📊 **Histórico Inteligente** — Persistência com ranking de popularidade
+- ⚡ **Cache + Rate Limit** — Respostas rápidas e proteção contra abuso
+- 🌐 **Serverless-Ready** — Vercel Serverless Functions
+- 🎨 **UI Premium** — Glassmorphism, skeleton loading e animações
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Camada | Tech |
+|---|---|
+| **Frontend** | React 19, TypeScript, Tailwind CSS, tRPC Client |
+| **Backend** | tRPC v11, Drizzle ORM, Serper.dev API |
+| **Database** | TiDB Serverless (MySQL distribuído) |
+| **Infra** | Vercel Serverless, Catch-all Routes |
+
+---
+
+## 🚀 Como Rodar
+
+```bash
+git clone https://github.com/silvajeanderson165-creator/TrendScope.git
+cd TrendScope && npm install
+# Configurar .env com DATABASE_URL e SERPER_API_KEY
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Desenvolvido por **Jeanderson Silva**
