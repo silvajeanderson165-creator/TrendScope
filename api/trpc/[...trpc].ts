@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
@@ -14,7 +15,7 @@ import {
   json,
 } from "drizzle-orm/mysql-core";
 
-// ─── Schema inline ──────────────────────────────────────────────
+// ─── Schema ─────────────────────────────────────────────────────
 const searches = mysqlTable("searches", {
   id: serial("id").primaryKey(),
   query: varchar("query", { length: 255 }).notNull().unique(),
@@ -154,9 +155,9 @@ function mockResults(query: string) {
     { title: `7 estratégias com ${query}`, description: `Táticas validadas sobre ${query}.`, url: `https://estrategias.com/${query.toLowerCase().replace(/\s+/g, "-")}` },
     { title: `${query}: O que mudou em 2026`, description: `Atualização completa sobre ${query}.`, url: `https://futuro.com/${query.toLowerCase().replace(/\s+/g, "-")}` },
     { title: `Estudo: ${query} na prática`, description: `Pesquisa aprofundada sobre ${query}.`, url: `https://estudo.com/${query.toLowerCase().replace(/\s+/g, "-")}` },
-  ].map((t, i) => ({
-    id: `mock-${i}`, title: t.title, description: t.description, url: t.url,
-    image: MOCK_IMAGES[i], source: new URL(t.url).hostname,
+  ].map((tp, i) => ({
+    id: `mock-${i}`, title: tp.title, description: tp.description, url: tp.url,
+    image: MOCK_IMAGES[i], source: new URL(tp.url).hostname,
     date: new Date(Date.now() - i * 86400000).toLocaleDateString("pt-BR"), isMock: true,
   }));
 }
@@ -211,12 +212,51 @@ export const appRouter = t.router({
 
 export type AppRouter = typeof appRouter;
 
-// ─── Vercel Handler ─────────────────────────────────────────────
-export default async function handler(req: Request) {
-  return fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req,
-    router: appRouter,
-    createContext: ({ req, resHeaders }) => ({ req, resHeaders }),
+// ─── Vercel Serverless Function Handler (Node.js format) ────────
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Convert Node.js IncomingMessage to Web API Request
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
+  const url = `${protocol}://${host}${req.url}`;
+
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value) headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+  }
+
+  // Read request body for POST requests
+  let body: string | undefined;
+  if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+    body = await new Promise<string>((resolve) => {
+      let data = "";
+      req.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+      req.on("end", () => resolve(data));
+    });
+  }
+
+  const webRequest = new Request(url, {
+    method: req.method || "GET",
+    headers,
+    body: body || undefined,
   });
+
+  try {
+    const webResponse = await fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req: webRequest,
+      router: appRouter,
+      createContext: ({ req: r, resHeaders }) => ({ req: r, resHeaders }),
+    });
+
+    // Convert Web API Response back to Node.js response
+    res.status(webResponse.status);
+    webResponse.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
+    const responseBody = await webResponse.text();
+    res.end(responseBody);
+  } catch (err) {
+    console.error("[TRPC_HANDLER_ERROR]", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 }
