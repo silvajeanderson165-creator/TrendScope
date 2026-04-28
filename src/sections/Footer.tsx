@@ -3,7 +3,7 @@ import { Github, Linkedin, Mail } from "lucide-react";
 
 const socialLinks = [
   { icon: Github, href: "https://github.com/jeanderson-silva8", label: "GitHub" },
-  { icon: Linkedin, href: "https://www.linkedin.com/in/jeanderson-silva-rodrigues821/?skipRedirect=true", label: "LinkedIn" },
+  { icon: Linkedin, href: "https://www.linkedin.com/in/jeanderson-silva-rodrigues821/", label: "LinkedIn" },
   { icon: Mail, href: "mailto:Silvajeanderson165@gmail.com", label: "Email" },
 ];
 
