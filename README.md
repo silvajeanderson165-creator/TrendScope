@@ -38,7 +38,7 @@ Motor de busca especializado em curadoria. O usuário pesquisa qualquer tema e r
 ## 🚀 Como Rodar
 
 ```bash
-git clone https://github.com/silvajeanderson165-creator/TrendScope.git
+git clone https://github.com/jeanderson-silva8/TrendScope.git
 cd TrendScope && npm install
 # Configurar .env com DATABASE_URL e SERPER_API_KEY
 npm run dev
