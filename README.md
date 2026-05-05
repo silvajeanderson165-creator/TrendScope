@@ -7,6 +7,8 @@
 ![tRPC](https://img.shields.io/badge/tRPC-11-2596BE?style=for-the-badge&logo=trpc&logoColor=white)
 ![TiDB](https://img.shields.io/badge/TiDB-Serverless-FF4500?style=for-the-badge)
 
+🟢 **LIVE DEMO:** [Acesse o TrendScope Ao Vivo Aqui](https://trend-scope.vercel.app)
+
 ---
 
 ## 🧠 Sobre
