@@ -156,7 +156,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    console.log("Calling Google Serper fetch...");
+    // [SEGURANÇA] Log Seguro — não imprime a query do usuário
     const response = await fetch("https://google.serper.dev/search", {
       method: "POST",
       headers: {
@@ -171,7 +171,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
       }),
       signal: controller.signal,
     });
-    console.log("Fetch finished! Status:", response.status);
+    // Log de status apenas (sem dados do usuário)
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -203,9 +203,7 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
       console.log("Fetching OG images...");
       await Promise.all(results.map(async (r) => {
         if (!r.image) {
-          console.log("Fetching OG image for:", r.url);
           r.image = await fetchOgImage(r.url);
-          console.log("Finished OG image for:", r.url);
         }
       }));
       console.log("All OG images fetched");
@@ -219,16 +217,15 @@ async function trySerperSearch(query: string): Promise<any /* eslint-disable-lin
 }
 
 async function persistSearch(query: string, results: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[] | null = null) {
-  console.log("Starting persistSearch for query:", query);
+  // [SEGURANÇA] Log Seguro — sem dados do usuário
   try {
     const db = getDb();
-    console.log("DB connected, executing select...");
     const existing = await db
       .select()
       .from(searches)
       .where(eq(searches.query, query))
       .limit(1);
-    console.log("DB select finished. Existing:", existing.length);
+
 
     if (existing.length > 0) {
       await db
@@ -274,18 +271,14 @@ export const searchRouter = createRouter({
       };
 
       // Try cache first
-      console.log("Checking cache...");
+
       const cached = getCached(cleanQuery);
       if (cached) {
-        console.log("Found in cache, persisting...");
         await safePersist(cleanQuery, cached);
-        console.log("Done persisting cache");
         return { results: cached, query: cleanQuery, source: "cache" };
       }
 
-      console.log("Calling trySerperSearch...");
       const realResults = await trySerperSearch(cleanQuery);
-      console.log("trySerperSearch finished with", realResults?.length, "results");
 
       if (realResults && realResults.length > 0) {
         setCached(cleanQuery, realResults);
